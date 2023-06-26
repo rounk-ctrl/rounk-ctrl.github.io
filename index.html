@@ -9,6 +9,7 @@
             html {
                 font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
                 background-color: black;
+                text-rendering: optimizeSpeed;
                 color: white;
             }
             h1{
@@ -22,11 +23,16 @@
                 margin-bottom: 0;
             }
         </style>
+        <script>
+            window.onload = function() {
+                document.getElementById("bd").textContent = new Date(new Date() - new Date("2007/06/27")).getFullYear() - 1970;
+            }
+        </script>
     </head>
     <body>
         <h1>h</h1>
         <p>i'm rounak</p>
-        <p>i'm 16</p>
+        <p>i'm <span id="bd"></span></p>
         <p>i know programming</p>
         <h2>languages i know</h2>
         <p> - C/C++</p>
