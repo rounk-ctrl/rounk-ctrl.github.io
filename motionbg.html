@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="this goofy ahh website">
+        <meta name="author" content="rounak">
+        <title>motionbackground documentation</title>
+        <style>
+            html {
+                font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
+                background-color: black;
+                text-rendering: optimizeSpeed;
+                color: white;
+            }
+            code{
+                background-color: #1c1f1d;
+                font-size:large;
+            }
+            h1{
+                margin-bottom: 5px;
+            }
+            h2{
+                margin-bottom: 5px;
+            }
+            p{
+                margin-top: 2px;
+                margin-bottom: 2px;
+            }
+            a{
+                color: white;
+                text-decoration: underline;
+            }
+            img{
+                padding-top:10px;
+            }
+            pre code {
+                white-space: pre-wrap;
+            } 
+            pre{
+                border-radius: 5px;
+                background-color: #1c1f1d;
+                border-color: #282c2a;
+            }
+        </style>
+    </head>
+    <body>
+        <marquee>WIP</marquee>
+        <h1>motionbackground</h1>
+        <p>epic shit added in windows 8.1 for the animated background stuff in start screen</p>
+        <p>it is stored in <code>imageres.dll</code> (45mb imageres!) under RCDATA</p>
+        <p>if you open it in Resource Hacker, you will see a bunch of binary stuff</p>
+        <img src="https://imgur.com/Rs1W2DA.png"/>
+
+        <br>
+        <h1>making sense of it</h1>
+        <p>figuring this out would've been hard, but microsoft used to provide typed pdb for <code>twinui.dll</code> until Windows 10 build 19041.844</p>
+        <p>here's links for windows 10 9841's <code>twinui.dll</code> (the version used for reverse engineering the implementation in ep_launcher): 
+            <ul>
+                <li>
+                    <a href="https://msdl.microsoft.com/download/symbols/twinui.pdb/78537DAC43F54A89B56F6A7461E668EA1/twinui.pdb">x86</a>
+                </li>
+                <li>
+                    <a href="https://msdl.microsoft.com/download/symbols/twinui.pdb/9F547DB097DD4F5D82AD90935CFFF2561/twinui.pdb">x64</a>
+                </li>
+            </ul>
+        </p>
+        <p>then, you can open it in <a href="https://github.com/horsicq/PDBRipper" target="_blank">PDBRipper</a> and see all the required types from it</p>
+        <h2>types ripped from the pdb</h2>
+        <pre><code style="background-color: transparent;">struct MBFHeader
+{
+    USHORT usFileTypeID;
+    USHORT usFormatVersion;
+    float flRepeatInterval;
+    UINT uAssetTableCount;
+    UINT uComputedTableCount;
+    UINT uSceneNodeTableCount;
+    UINT uAnimationTableCount;
+    UINT uDataBlockSize;
+};
+
+enum MBFAssetType : UINT
+{
+    Image = 0,
+    Special = 1,
+    MotionBackground = 2,
+};
+
+enum MBFAssetFlags : UINT
+{
+    Colorizable = 0x1,
+    EmbeddedExtraSmall = 0x2,
+    EmbeddedSmall = 0x4,
+    EmbeddedMedium = 0x8,
+    EmbeddedLarge = 0x10,
+    StartColorMatch = 0x20,
+    AccentColorMatch = 0x40,
+    StartColorFlags = 0x80,
+    AccentColorFlags = 0x100,
+};
+
+struct MBFAsset
+{
+    MBFAssetType uType;
+    MBFAssetFlags uAssetFlags;
+    UINT uBlockOffset;
+    UINT uBlockSize;
+    UINT uStartCOLORREFMatch;
+    UINT uAccentCOLORREFMatch;
+    UINT uStartColorFlags;
+    UINT uAccentColorFlags;
+};
+
+struct MBFImageAssetHeader
+{
+    UINT uWidth;
+    UINT uHeight;
+    UINT uImageEncoding;
+};
+
+struct MBFComputed
+{
+    UINT uVariable;
+    UINT uInput;
+    UINT uTarget;
+    UINT uModType;
+    float flModulo;
+    float flRatio;
+    float flInitial;
+    float flMin;
+    float flMax;
+};
+
+enum class MBFSceneNodeFlags
+{
+    NoFlags = 0x0,
+    AnimatedTranslateTransform = 0x1,
+    AnimatedRotateTransform = 0x2,
+    AnimatedScaleTransform = 0x4,
+    PositionTranslateTransform = 0x8,
+    PositionRotateTransform = 0x10,
+    PositionScaleTransform = 0x20,
+    RequiresClipping = 0x40,
+    RequiresOpacity = 0x80,
+    TrackedTransform = 0x100,
+    FadeAsLayer = 0x200,
+};
+
+struct MBFSceneNode
+{
+    UINT uParent;
+    MBFSceneNodeFlags uSceneNodeFlags;
+    UINT uContent;
+    float flTranslateX;
+    float flTranslateY;
+    float flRotate;
+    float flScale;
+    float flRx;
+    float flRy;
+    float flCenterX;
+    float flCenterY;
+    float flClipTop;
+    float flClipLeft;
+    float flClipBottom;
+    float flClipRight;
+    float flOpacity;
+};
+
+struct MBFAnimation
+{
+    UINT uVariable;
+    UINT uEvent;
+    UINT uTarget;
+    float flStart;
+    float flDuration;
+    float flCubicA;
+    float flCubicB;
+    float flCubicC;
+    float flCubicD;
+};
+</code></pre>
+<hr>
+    <h1>understanding the file format</h1>
+    <p>in each of the motionbackground files, we can see that it starts with <code>CF AC 07 00</code></p>
+    <p>this must be some kind of header... it is!</p>
+    <p>each motionbackground file has a MBFHeader at the beginning 28 bytes</p>
+    <p>refering to MBFHeader, we can see</p>
+    <img src="https://imgur.com/TdaUwMK.png" />
+    <p>so we can see that each valid motionbackground resource must have <code>usFileTypeID == 0xACCF</code> and <code>usFormatVersion == 7</code></p>
+    <p>in fact, it checks for that in <code>CMotionBackgroundData::_Load()</code></p>
+    <img src="https://imgur.com/hlx9Wnv.png"/>
+    <p>after MBFHeader, uAssetTableCount amount of MBFAsset structs are there</p>
+    <h3>notes</h3>
+    <ul>
+        <li>in little endian format, the data represented in hex format is opposite of the data</li>
+        <li>in MBFHeader at the beginning of the file, only uAssetTableCount has value, other table counts are empty. <br> those are defined in the MBFAsset with uType as MotionBackground</li>
+    </ul>
+
+    </body>
+</html>
