@@ -66,7 +66,25 @@
             </ul>
         </p>
         <p>then, you can open it in <a href="https://github.com/horsicq/PDBRipper" target="_blank">PDBRipper</a> and see all the required types from it</p>
-        <h2>types ripped from the pdb</h2>
+        <a href="#types">here are the types for convenience</a>
+        <h1>understanding the file format</h1>
+        <p>in each of the motionbackground files, we can see that it starts with <code>CF AC 07 00</code></p>
+        <p>this must be some kind of header... it is!</p>
+        <p>each motionbackground file has a MBFHeader at the beginning 28 bytes</p>
+        <p>refering to MBFHeader, we can see</p>
+        <img src="https://imgur.com/TdaUwMK.png" />
+        <p>so we can see that each valid motionbackground resource must have <code>usFileTypeID == 0xACCF</code> and <code>usFormatVersion == 7</code></p>
+        <p>in fact, it checks for that in <code>CMotionBackgroundData::_Load()</code></p>
+        <img src="https://imgur.com/hlx9Wnv.png"/>
+        <p>after MBFHeader, uAssetTableCount amount of MBFAsset structs are there</p>
+        <h3>notes</h3>
+        <ul>
+            <li>in little endian format, the data represented in hex format is opposite of the data</li>
+            <li>in MBFHeader at the beginning of the file, only uAssetTableCount has value, other table counts are empty. <br> those are defined in the MBFAsset with uType as MotionBackground</li>
+        </ul>
+
+        <hr>
+        <h2 id="types">types ripped from the pdb</h2>
         <pre><code style="background-color: transparent;">struct MBFHeader
 {
     USHORT usFileTypeID;
@@ -178,23 +196,6 @@ struct MBFAnimation
     float flCubicC;
     float flCubicD;
 };
-</code></pre>
-<hr>
-    <h1>understanding the file format</h1>
-    <p>in each of the motionbackground files, we can see that it starts with <code>CF AC 07 00</code></p>
-    <p>this must be some kind of header... it is!</p>
-    <p>each motionbackground file has a MBFHeader at the beginning 28 bytes</p>
-    <p>refering to MBFHeader, we can see</p>
-    <img src="https://imgur.com/TdaUwMK.png" />
-    <p>so we can see that each valid motionbackground resource must have <code>usFileTypeID == 0xACCF</code> and <code>usFormatVersion == 7</code></p>
-    <p>in fact, it checks for that in <code>CMotionBackgroundData::_Load()</code></p>
-    <img src="https://imgur.com/hlx9Wnv.png"/>
-    <p>after MBFHeader, uAssetTableCount amount of MBFAsset structs are there</p>
-    <h3>notes</h3>
-    <ul>
-        <li>in little endian format, the data represented in hex format is opposite of the data</li>
-        <li>in MBFHeader at the beginning of the file, only uAssetTableCount has value, other table counts are empty. <br> those are defined in the MBFAsset with uType as MotionBackground</li>
-    </ul>
-
+        </code></pre>
     </body>
 </html>
