@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="this goofy ahh website">
+        <meta name="description" content="MotionBackground">
         <meta name="author" content="rounak">
         <title>motionbackground documentation</title>
         <style>
@@ -47,36 +47,27 @@
     <body>
         <marquee>WIP</marquee>
         <h1>motionbackground</h1>
-        <p>epic shit added in windows 8.1 for the animated background stuff in start screen</p>
+        <p>a format introduced in windows 8.1 for animated backgrounds in start screen, windows 8.0 had static images</p>
         <p>it is stored in <code>imageres.dll</code> (45mb imageres!) under RCDATA</p>
-        <p>if you open it in Resource Hacker, you will see a bunch of binary stuff</p>
-        <img src="https://imgur.com/Rs1W2DA.png"/>
+        <p>it is composed of multiple images and properties on how to animate them </p>
 
-        <br>
-        <h1>making sense of it</h1>
+        <h2>so what is this file?</h2>
+        <p>if you open it in Resource Hacker, you will see a bunch of binary stuff</p>
+        <img src="https://imgur.com/F8gZmQP.png"/>
+        <br><br>
         <p>figuring this out would've been hard, but microsoft used to provide typed pdb for <code>twinui.dll</code> until Windows 10 build 19041.844</p>
-        <p>here's links for windows 10 9841's <code>twinui.dll</code> (the version used for reverse engineering the implementation in ep_launcher): 
-            <ul>
-                <li>
-                    <a href="https://msdl.microsoft.com/download/symbols/twinui.pdb/78537DAC43F54A89B56F6A7461E668EA1/twinui.pdb">x86</a>
-                </li>
-                <li>
-                    <a href="https://msdl.microsoft.com/download/symbols/twinui.pdb/9F547DB097DD4F5D82AD90935CFFF2561/twinui.pdb">x64</a>
-                </li>
-            </ul>
-        </p>
-        <p>then, you can open it in <a href="https://github.com/horsicq/PDBRipper" target="_blank">PDBRipper</a> and see all the required types from it</p>
+        <p>you can open the pdb in <a href="https://github.com/horsicq/PDBRipper" target="_blank">PDBRipper</a> and see all the required types from it</p>
         <a href="#types">here are the types for convenience</a>
+
         <h1>understanding the file format</h1>
-        <p>in each of the motionbackground files, we can see that it starts with <code>CF AC 07 00</code></p>
-        <p>this must be some kind of header... it is!</p>
-        <p>each motionbackground file has a MBFHeader at the beginning 28 bytes</p>
-        <p>refering to MBFHeader, we can see</p>
+        <p>to understand how it loads the resource, we have to look at <code>CMotionBackgroundData</code> class in <code>twinui.dll</code></p>
+        <p>each motionbackground resource starts with a MBFHeader in the beginning 28 bytes</p>
+        <p>refering to the MBFHeader struct, we can see</p>
         <img src="https://imgur.com/TdaUwMK.png" />
         <p>so we can see that each valid motionbackground resource must have <code>usFileTypeID == 0xACCF</code> and <code>usFormatVersion == 7</code></p>
         <p>in fact, it checks for that in <code>CMotionBackgroundData::_Load()</code></p>
         <img src="https://imgur.com/hlx9Wnv.png"/>
-        <p>after MBFHeader, uAssetTableCount amount of MBFAsset structs are there</p>
+        <p>after the MBFHeader, there are uAssetTableCount number of MBFAsset structures</p>
         <h3>notes</h3>
         <ul>
             <li>in little endian format, the data represented in hex format is opposite of the data</li>
